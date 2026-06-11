@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️스슐랭 맛집지도</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=a3af8fbddc042c9ec075f3f00b48c45a&autoload=false"></script>
     <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=mtis6g20cr"></script>
     <style>
         body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; }
@@ -18,6 +17,7 @@
             cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s ease;
         }
 
+        /* 카테고리 버튼별 색상 계열 매칭 */
         .filter-btn[data-category="전체"] { border-color: #adb5bd; color: #495057; background: #f8f9fa; }
         .filter-btn[data-category="전체"].active { background: #343a40; border-color: #343a40; color: #fff; }
         .filter-btn[data-category="스파크플러스"] { border-color: #212529; color: #212529; background: #f1f3f5; }
@@ -47,6 +47,9 @@
         .search-input:focus { border-color: #212529; background: #fff; box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.05); }
 
         #map { width: 100%; height: 40vh; background: #e9ecef; }
+        /* 🟢 로딩 인디케이터 스타일 추가 */
+        #loading { position: absolute; top: 15vh; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 1000; }
+        
         .list-container { padding: 20px; height: calc(60vh - 180px); overflow-y: auto; scroll-behavior: smooth; }
         
         .card { 
@@ -124,12 +127,15 @@
         <input type="text" id="search-input" class="search-input" placeholder="🔍 원하는 맛집과 키워드를 검색해보세요 (예: 혼밥, 회식, 가성비)...">
     </div>
 
-    <div id="map"></div>
+    <div id="map">
+        <div id="loading">🚀 네이버 지도에서 맛집 좌표를 불러오는 중입니다...</div>
+    </div>
 
     <div class="list-container" id="restaurant-list"></div>
 
     <script>
         const CONFIG = {
+            // 현재 수정 중이신 구글 시트 배포 주소 연동 완료
             SHEET_CSV_URL: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTsVYjgGweLhqF6FX2aiz5H7YCcLlkbi1fFYF4UmF13JAaXW1kwT5Ael47Rb2icfnPvQPsNzQ82ab6O/pub?gid=0&single=true&output=csv",
             BRANCH: { lat: 37.495085, lng: 127.035252 }
         };
@@ -170,43 +176,65 @@
             });
         }
 
+        // 🟢 [핵심 우회 엔진] 네이버 URL만으로 위경도를 무제한 파싱하는 안정적인 프록시
+        async function getCoordinatesFromNaver(naverUrl) {
+            if (!naverUrl) return null;
+            const match = naverUrl.match(/\/place\/(\d+)/);
+            if (!match) return null;
+            const placeId = match[1];
+            
+            try {
+                // allorigins 프록시를 통해 네이버 보안벽 완벽 우회
+                const targetApiUrl = encodeURIComponent(`https://map.naver.com/v5/api/sites/summary/${placeId}?lang=ko`);
+                const response = await fetch(`https://api.allorigins.win/raw?url=${targetApiUrl}`);
+                const json = await response.json();
+                
+                if (json && json.x && json.y) {
+                    return { lat: parseFloat(json.y), lng: parseFloat(json.x) };
+                }
+            } catch (e) {
+                console.error('좌표 로드 실패:', e);
+            }
+            return null;
+        }
+
         async function fetchSheetData() {
             try {
                 const response = await fetch(CONFIG.SHEET_CSV_URL);
                 const csvText = await response.text();
                 const data = parseCSV(csvText);
                 
-                allData = data.filter(item => item['노출'] && item['노출'].trim().toUpperCase() === 'TRUE').map(item => {
-                    let finalLat = parseFloat(item['위도'] || item['lat'] || 0);
-                    let finalLng = parseFloat(item['경도'] || item['lng'] || 0);
-                    
-                    let kakaoUrl = item['카카오맵URL'] || ''; 
+                // 🟢 시트의 '네이버맵URL'을 바탕으로 실시간 좌표 추적
+                const promises = data.filter(item => item['노출'] && item['노출'].trim().toUpperCase() === 'TRUE').map(async (item) => {
                     let naverUrl = item['네이버맵URL'] || '';
-
-                    // 🟢 핵심 로직: 시트에 입력하신 카카오맵 URL 안에서 위경도를 몰래 빼내서 네이버 지도 핀에 꽂습니다!
-                    if (kakaoUrl && String(kakaoUrl).includes('urlX=') && String(kakaoUrl).includes('urlY=')) {
-                        try {
-                            const urlParams = new URLSearchParams(kakaoUrl.split('?')[1]);
-                            const x = parseFloat(urlParams.get('urlX'));
-                            const y = parseFloat(urlParams.get('urlY'));
-                            if (!isNaN(x) && !isNaN(y)) {
-                                const coords = new kakao.maps.Coords(x, y); // 카카오 계산기를 빌려씀
-                                const latlng = coords.toLatLng();
-                                finalLat = latlng.getLat(); 
-                                finalLng = latlng.getLng();
-                            }
-                        } catch(e) { console.error('좌표 변환 실패:', e); }
+                    
+                    // 네이버 URL에서 좌표 가져오기 (1순위)
+                    let coords = await getCoordinatesFromNaver(naverUrl);
+                    
+                    if (coords) {
+                        item.computedLat = coords.lat;
+                        item.computedLng = coords.lng;
+                    } else {
+                        // 만약 실패하면 시트에 있는 위도/경도를 백업으로 씁니다
+                        item.computedLat = parseFloat(item['위도'] || item['lat'] || 0);
+                        item.computedLng = parseFloat(item['경도'] || item['lng'] || 0);
                     }
                     
-                    item.computedLat = finalLat;
-                    item.computedLng = finalLng;
-                    // 상세위치 버튼을 누르면 무조건 네이버맵 URL로 넘겨줍니다.
-                    item.rawMapUrl = (naverUrl && naverUrl.startsWith('http')) ? naverUrl : kakaoUrl;
+                    item.rawMapUrl = (naverUrl && naverUrl.startsWith('http')) ? naverUrl : 'https://map.naver.com';
                     return item;
                 });
 
+                // 모든 맛집 좌표 로딩이 끝날 때까지 대기
+                allData = await Promise.all(promises);
+                
+                // 로딩 알림창 숨기기
+                document.getElementById('loading').style.display = 'none';
+                
                 renderMapAndList();
-            } catch (error) { console.error('데이터 오류:', error); }
+            } catch (error) { 
+                console.error('데이터 오류:', error); 
+                document.getElementById('loading').innerText = "데이터 로딩에 실패했습니다.";
+            }
         }
 
         function renderMapAndList(shouldScrollToTarget = false) {
@@ -270,7 +298,7 @@
                 else if(cate.includes('술집')) pinClass = 'pin-술집';
                 else if(cate.includes('스파크플러스')) pinClass = 'pin-스파크플러스';
 
-                // 좌표가 존재할 때만 렌더링
+                // 좌표가 정상적으로 존재할 때만 네이버 지도 핀을 렌더링합니다.
                 if (item.computedLat && item.computedLng && item.computedLat !== 0) {
                     const markerContent = `<div class="custom-pin ${pinClass}">${item['이모지'] || ''} ${item['이름'] || ''}</div>`;
                     const marker = new naver.maps.Marker({
@@ -373,11 +401,9 @@
             refLat = null; refLng = null; selectedTargetId = null; renderMapAndList();
         });
 
-        // 🟢 백그라운드 카카오 스크립트가 다 로딩된 후 연산 시작
-        kakao.maps.load(function() {
-            initMap();
-            fetchSheetData();
-        });
+        // 네이버 전용 구동식 즉시 가동
+        initMap();
+        fetchSheetData();
     </script>
 </body>
 </html>
