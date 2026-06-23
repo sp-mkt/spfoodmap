@@ -8,11 +8,13 @@
     <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=mtis6g20cr"></script>
     <style>
         body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; }
+        
+        /* 🟢 헤더 레이아웃 최적화 */
         .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
         .header h1 { margin: 0; font-size: 20px; color: #333; }
         .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
         
-        /* 🟢 맛집 제보하기 버튼 스타일 */
+        /* 맛집 제보하기 버튼 스타일 */
         .report-btn {
             position: absolute; right: 20px; top: 15px;
             background: #212529; color: #deff9a; padding: 8px 16px;
@@ -62,7 +64,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
         }
         
-        .list-container { padding: 20px; height: calc(60vh - 180px); overflow-y: auto; scroll-behavior: smooth; }
+        .list-container { padding: 20px; height: calc(60vh - 180px); overflow-y: auto; scroll-behavior: smooth; box-sizing: border-box; }
         
         .card { 
             background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; 
@@ -78,18 +80,15 @@
         .tag { background: #f1f3f5; padding: 4px 8px; border-radius: 4px; }
         
         .btn-group { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; gap: 6px; align-items: center; }
-        .map-link-btn {
-            padding: 8px 12px; background: #fee500; color: #191919; border: none; border-radius: 6px;
-            font-size: 12px; font-weight: bold; text-decoration: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: background 0.2s; display: inline-flex; align-items: center; white-space: nowrap;
+        .map-link-btn, .inquiry-btn {
+            padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; 
+            text-decoration: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;
         }
+        .map-link-btn { background: #fee500; color: #191919; border: none; }
         .map-link-btn:hover { background: #fada0a; }
 
-        .inquiry-btn {
-            padding: 8px 12px; background: #ffffff; color: #212529; border: 1px solid #ced4da; border-radius: 6px;
-            font-size: 12px; font-weight: bold; text-decoration: none; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: all 0.2s; display: inline-flex; align-items: center; white-space: nowrap;
-        }
+        .inquiry-btn { background: #ffffff; color: #212529; border: 1px solid #ced4da; }
         .inquiry-btn:hover { background: #f8f9fa; border-color: #adb5bd; }
 
         .pin-한식 { --pin-bg-color: #e03131; --pin-text-color: white; }
@@ -110,6 +109,22 @@
             content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
             border-width: 8px 6px 0; border-style: solid; border-color: var(--pin-bg-color, #2f9e44) transparent transparent transparent; 
             display: block; width: 0; height: 0;
+        }
+
+        /* 📱 반응형 모바일 최적화 스타일 추가 (768px 이하) */
+        @media (max-width: 768px) {
+            .header { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+            .report-btn { position: static; transform: none; width: calc(100% - 32px); text-align: center; margin-top: 5px; }
+            .report-btn:hover { transform: none; }
+
+            .card-header, .card-desc, .card-footer { padding-right: 0; }
+            .card-desc { margin-bottom: 15px; }
+
+            .btn-group { 
+                position: static; transform: none; display: flex; flex-direction: column; 
+                width: 100%; gap: 8px; margin-top: 15px; border-top: 1px solid #f1f3f5; padding-top: 12px; 
+            }
+            .map-link-btn, .inquiry-btn { width: 100%; box-sizing: border-box; padding: 10px; font-size: 13px; }
         }
     </style>
 </head>
@@ -149,7 +164,6 @@
             BRANCH: { lat: 37.495085, lng: 127.035252 } 
         };
 
-        // 🟢 [속도 & 정확도 100% 보장] 주요 스플 지점의 절대 좌표를 아예 내장했습니다!
         const SP_BRANCHES = {
             "스플 강남점": { lat: 37.496541, lng: 127.029729 },
             "스플 강남2호점": { lat: 37.498895, lng: 127.027429 },
@@ -160,7 +174,7 @@
             "스플 본사": { lat: 37.500806, lng: 127.036666 },
             "스플 역삼점": { lat: 37.500806, lng: 127.036666 },
             "스플 역삼2호점": { lat: 37.499427, lng: 127.034789 },
-            "스플 역삼3호점": { lat: 37.501178, lng: 127.034444 },
+            "스플 역sam3호점": { lat: 37.501178, lng: 127.034444 },
             "스플 선릉점": { lat: 37.504297, lng: 127.049449 },
             "스플 선릉2호점": { lat: 37.505085, lng: 127.047804 },
             "스플 선릉3호점": { lat: 37.505312, lng: 127.046399 },
@@ -238,16 +252,14 @@
                     let naverUrl = item['네이버맵URL'] || item['H'] || '';
                     item.rawMapUrl = (naverUrl && naverUrl.startsWith('http')) ? naverUrl : 'https://map.naver.com';
 
-                    // 1. [초고속 렌더링] 스플 지점인지 확인하여 DB에서 즉시 좌표 부여!
                     let cleanName = placeName.replace(/⚡\s*/g, '').trim(); 
                     if (SP_BRANCHES[cleanName]) {
                         item.computedLat = SP_BRANCHES[cleanName].lat;
                         item.computedLng = SP_BRANCHES[cleanName].lng;
                         allData.push(item);
-                        continue; // 스플 지점은 검색 패스! 로딩 시간 단축의 핵심
+                        continue; 
                     }
 
-                    // 2. 혹시 시트에 입력해 둔 좌표가 있다면 우선 사용
                     let manualLat = parseFloat(item['위도'] || item['lat'] || 0);
                     let manualLng = parseFloat(item['경도'] || item['lng'] || 0);
                     if (manualLat !== 0 && manualLng !== 0 && !isNaN(manualLat)) {
@@ -257,7 +269,6 @@
                         continue;
                     }
 
-                    // 3. 나머지 일반 맛집들만 딜레이를 대폭 줄여서(20ms) 고속 검색
                     if (placeName) {
                         let coords = await new Promise(resolve => {
                             ps.keywordSearch('서울 ' + placeName, function(data, status) {
@@ -273,7 +284,7 @@
                     }
                     
                     allData.push(item);
-                    await new Promise(r => setTimeout(r, 20)); // 검색 딜레이를 50ms -> 20ms로 대폭 단축
+                    await new Promise(r => setTimeout(r, 20)); 
                 }
 
                 document.getElementById('loading').style.display = 'none';
