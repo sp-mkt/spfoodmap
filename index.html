@@ -131,9 +131,11 @@
 <body>
 
     <div class="header">
-        <h1>🍽️스슐랭 맛집지도</h1>
+        <h1>🍽️스슐랭 가이드</h1>
+        <p>K-직장인 스플인들의 또또또또간집 리스트⚡</p>
         <p>스파크플러스 지점을 클릭하면 근처 맛집들이 나와요!</p>
-        <a href="https://sp-mkt.github.io/spfoodmap-tip-off/" target="_blank" class="report-btn">📢 맛집 제보하기</a>
+
+        <a href="https://sp-mkt.github.io/spfoodmap-tip-off/" target="_blank" class="report-btn">📢 스슐랭 제보하기</a>
     </div>
 
     <div class="filter-container" id="filters">
@@ -153,7 +155,7 @@
     </div>
 
     <div id="map">
-        <div id="loading">🚀 스슐랭 좌표를 찾고 있어요...</div>
+        <div id="loading">🚀 스슐랭 맛집들을 모으고 있어요...</div>
     </div>
 
     <div class="list-container" id="restaurant-list"></div>
@@ -420,7 +422,7 @@
                     });
 
                     const inqBtn = card.querySelector('.inquiry-btn');
-                    if (inqBtn) { inqBtn.addEventListener('click', (e) => { e.stopPropagation(); window.open('https://www.sparkplus.co/office', '_blank'); }); }
+                    if (inqBtn) { inqBtn.addEventListener('click', (e) => { e.stopPropagation(); window.open('https://mkt.sparkplus.co/4uvnvlT', '_blank'); }); }
 
                     listContainer.appendChild(card);
                 });
