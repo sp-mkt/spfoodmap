@@ -7,10 +7,10 @@
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=a3af8fbddc042c9ec075f3f00b48c45a&libraries=services&autoload=false"></script>
     <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=mtis6g20cr"></script>
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; }
+        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; }
         
-        /* 🟢 헤더 레이아웃 최적화 */
-        .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
+        /* 🟢 헤더 레이아웃 최적화 (모바일에서 고정 해제) */
+        .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: relative; z-index: 100; }
         .header h1 { margin: 0; font-size: 20px; color: #333; }
         .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
         
@@ -22,6 +22,9 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: all 0.2s;
         }
         .report-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); background: #343a40; }
+
+        /* 📌 카테고리 & 검색창 고정을 위한 래퍼와 스타일 조정 */
+        .sticky-wrapper { position: sticky; top: 0; z-index: 90; background: white; }
 
         .filter-container { padding: 10px 20px; background: white; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #eee; }
         .filter-btn { 
@@ -55,7 +58,7 @@
         }
         .search-input:focus { border-color: #212529; background: #fff; box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.05); }
 
-        #map { width: 100%; height: 40vh; background: #e9ecef; position: relative; }
+        #map { width: 100%; height: 40vh; background: #e9ecef; position: relative; flex-shrink: 0; }
         
         #loading { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
@@ -64,7 +67,7 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
         }
         
-        .list-container { padding: 20px; height: calc(60vh - 180px); overflow-y: auto; scroll-behavior: smooth; box-sizing: border-box; }
+        .list-container { padding: 20px; flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; box-sizing: border-box; }
         
         .card { 
             background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; 
@@ -111,11 +114,14 @@
             display: block; width: 0; height: 0;
         }
 
-        /* 📱 반응형 모바일 최적화 스타일 추가 (768px 이하) */
+        /* 📱 반응형 모바일 최적화 스타일 (768px 이하) */
         @media (max-width: 768px) {
             .header { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
             .report-btn { position: static; transform: none; width: calc(100% - 32px); text-align: center; margin-top: 5px; }
             .report-btn:hover { transform: none; }
+
+            /* ⚡ 모바일에서 지도 높이 대폭 축소 (40vh -> 25vh) */
+            #map { height: 25vh; }
 
             .card-header, .card-desc, .card-footer { padding-right: 0; }
             .card-desc { margin-bottom: 15px; }
@@ -134,24 +140,25 @@
         <h1>🍽️스슐랭 가이드</h1>
         <p>K-직장인 스플인들의 또또또또간집 리스트⚡</p>
         <p>스파크플러스 지점을 클릭하면 근처 맛집들이 나와요!</p>
-
         <a href="https://sp-mkt.github.io/spfoodmap-tip-off/" target="_blank" class="report-btn">📢 스슐랭 제보하기</a>
     </div>
 
-    <div class="filter-container" id="filters">
-        <button class="filter-btn active" data-category="전체">전체</button>
-        <button class="filter-btn" data-category="스파크플러스">스파크플러스</button>
-        <button class="filter-btn" data-category="한식">한식</button>
-        <button class="filter-btn" data-category="카페">카페·디저트</button>
-        <button class="filter-btn" data-category="일식">일식</button>
-        <button class="filter-btn" data-category="중식">중식</button>
-        <button class="filter-btn" data-category="양식">양식</button>
-        <button class="filter-btn" data-category="아시안">아시안</button>
-        <button class="filter-btn" data-category="술집">술집</button>
-    </div>
+    <div class="sticky-wrapper">
+        <div class="filter-container" id="filters">
+            <button class="filter-btn active" data-category="전체">전체</button>
+            <button class="filter-btn" data-category="스파크플러스">스파크플러스</button>
+            <button class="filter-btn" data-category="한식">한식</button>
+            <button class="filter-btn" data-category="카페">카페·디저트</button>
+            <button class="filter-btn" data-category="일식">일식</button>
+            <button class="filter-btn" data-category="중식">중식</button>
+            <button class="filter-btn" data-category="양식">양식</button>
+            <button class="filter-btn" data-category="아시안">아시안</button>
+            <button class="filter-btn" data-category="술집">술집</button>
+        </div>
 
-    <div class="search-container">
-        <input type="text" id="search-input" class="search-input" placeholder="🔍 원하는 키워드를 검색해보세요 (예: 혼밥, 회식, 데이트)">
+        <div class="search-container">
+            <input type="text" id="search-input" class="search-input" placeholder="🔍 원하는 키워드를 검색해보세요 (예: 혼밥, 회식, 데이트)">
+        </div>
     </div>
 
     <div id="map">
