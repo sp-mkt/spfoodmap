@@ -9,7 +9,7 @@
     <style>
         body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; }
         
-        /* 🟢 헤더 레이아웃 최적화 (모바일에서 고정 해제) */
+        /* 🟢 헤더 고정 해제 (스크롤 시 위로 사라짐) */
         .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: relative; z-index: 100; }
         .header h1 { margin: 0; font-size: 20px; color: #333; }
         .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
@@ -23,8 +23,8 @@
         }
         .report-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); background: #343a40; }
 
-        /* 📌 카테고리 & 검색창 고정을 위한 래퍼와 스타일 조정 */
-        .sticky-wrapper { position: sticky; top: 0; z-index: 90; background: white; }
+        /* 📌 카테고리 바와 검색창만 상단에 딱 고정하는 래퍼 */
+        .sticky-wrapper { position: sticky; top: 0; z-index: 90; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
         .filter-container { padding: 10px 20px; background: white; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #eee; }
         .filter-btn { 
@@ -120,7 +120,7 @@
             .report-btn { position: static; transform: none; width: calc(100% - 32px); text-align: center; margin-top: 5px; }
             .report-btn:hover { transform: none; }
 
-            /* ⚡ 모바일에서 지도 높이 대폭 축소 (40vh -> 25vh) */
+            /* 모바일 지도 높이 줄임 */
             #map { height: 25vh; }
 
             .card-header, .card-desc, .card-footer { padding-right: 0; }
