@@ -7,10 +7,11 @@
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=a3af8fbddc042c9ec075f3f00b48c45a&libraries=services&autoload=false"></script>
     <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=mtis6g20cr"></script>
     <style>
-        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; height: 100%; background: #f8f9fa; display: flex; flex-direction: column; }
+        /* 🟢 전체 스크롤이 자연스럽게 흐르도록 height: 100% 제거 및 구조 변경 */
+        body, html { margin: 0; padding: 0; font-family: 'Pretendard', sans-serif; background: #f8f9fa; min-height: 100%; }
         
-        /* 🟢 헤더 고정 해제 (스크롤 시 위로 사라짐) */
-        .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: relative; z-index: 100; }
+        /* 헤더 고정 해제 (스크롤 시 무조건 위로 사라짐) */
+        .header { padding: 15px 20px; background: white; border-bottom: 1px solid #eee; position: relative; z-index: 10; }
         .header h1 { margin: 0; font-size: 20px; color: #333; }
         .header p { margin: 5px 0 0; font-size: 13px; color: #666; }
         
@@ -23,8 +24,15 @@
         }
         .report-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); background: #343a40; }
 
-        /* 📌 카테고리 바와 검색창만 상단에 딱 고정하는 래퍼 */
-        .sticky-wrapper { position: sticky; top: 0; z-index: 90; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        /* 📌 카테고리 바와 검색창만 상단에 완벽하게 고정 (sticky) */
+        .sticky-wrapper { 
+            position: -webkit-sticky; /* 사파리 지원 */
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            background: white; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06); 
+        }
 
         .filter-container { padding: 10px 20px; background: white; overflow-x: auto; white-space: nowrap; border-bottom: 1px solid #eee; }
         .filter-btn { 
@@ -58,7 +66,8 @@
         }
         .search-input:focus { border-color: #212529; background: #fff; box-shadow: 0 0 0 3px rgba(33, 37, 41, 0.05); }
 
-        #map { width: 100%; height: 40vh; background: #e9ecef; position: relative; flex-shrink: 0; }
+        /* 지도 높이 설정 */
+        #map { width: 100%; height: 40vh; background: #e9ecef; position: relative; }
         
         #loading { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
@@ -67,7 +76,8 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px;
         }
         
-        .list-container { padding: 20px; flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; box-sizing: border-box; }
+        /* 리스트 컨테이너 자체 스크롤 제거 (전체 스크롤 공유) */
+        .list-container { padding: 20px; box-sizing: border-box; }
         
         .card { 
             background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; 
@@ -120,7 +130,7 @@
             .report-btn { position: static; transform: none; width: calc(100% - 32px); text-align: center; margin-top: 5px; }
             .report-btn:hover { transform: none; }
 
-            /* 모바일 지도 높이 줄임 */
+            /* 모바일 지도 세로 높이 축소 (25vh) */
             #map { height: 25vh; }
 
             .card-header, .card-desc, .card-footer { padding-right: 0; }
